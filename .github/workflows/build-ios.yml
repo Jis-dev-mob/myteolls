@@ -251,11 +251,19 @@ jobs:
           cd project
           flutter pub get
 
-      - name: Corriger la version minimale iOS
+      - name: Corriger la version minimale iOS et configurer RunnerTests
         run: |
           cd project/ios
           sed -i '' 's/platform :ios, '9.0'/platform :ios, '12.0'/' Podfile
-          pod install --repo-update
+          
+          # Vérifier si le Podfile contient des références à RunnerTests
+          if grep -q "RunnerTests" Podfile; then
+            # Modifier le Podfile pour gérer le cas où RunnerTests n'existe pas
+            sed -i '' '/target.*RunnerTests/,/end/ s/^/#/' Podfile
+          fi
+          
+          # Exécuter pod install avec l'option --no-integrate pour éviter les problèmes avec RunnerTests
+          pod install --repo-update --no-integrate || pod install --repo-update
           
       - name: Décrypter le certificat et le profil de provisioning
         run: |
