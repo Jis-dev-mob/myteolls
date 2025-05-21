@@ -271,6 +271,9 @@ jobs:
           cd project/ios
           sed -i '' 's/platform :ios, '9.0'/platform :ios, '12.0'/' Podfile
           pod install --repo-update
+
+      # Configuration pour s'assurer que toutes les icônes iPad nécessaires sont présentes
+      # like above
           
       - name: Décrypter le certificat et le profil de provisioning
         run: |
@@ -358,35 +361,7 @@ jobs:
           echo "UUID du profil: $UUID"
           # Renommer le profil avec son UUID pour assurer qu'Xcode le trouve
           cp certificates/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${UUID//\"/}.mobileprovision
-      
-      # MODIFICATION: Mise à jour du fichier project.pbxproj avant la compilation Flutter
-      - name: Mettre à jour les paramètres de signature dans le fichier project.pbxproj
-        run: |
-          cd project/ios
-          
-          # Vérifier si Runner.xcodeproj/project.pbxproj existe
-          if [ ! -f "Runner.xcodeproj/project.pbxproj" ]; then
-            echo "❌ Le fichier project.pbxproj n'existe pas!"
-            exit 1
-          fi
-          
-          # Obtenir les identifiants nécessaires
-          TEAM_ID="${{ secrets.TEAM_ID }}"
-          APP_BUNDLE_ID="${{ secrets.APP_BUNDLE_ID }}"
-          PROFILE_NAME="${{ secrets.PROVISIONING_PROFILE_NAME }}"
-          
-          # Mettre à jour manuellement le fichier project.pbxproj avec le TEAM_ID
-          sed -i '' "s/DEVELOPMENT_TEAM = \"\";/DEVELOPMENT_TEAM = \"$TEAM_ID\";/g" Runner.xcodeproj/project.pbxproj
-          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = \".*\";/PRODUCT_BUNDLE_IDENTIFIER = \"$APP_BUNDLE_ID\";/g" Runner.xcodeproj/project.pbxproj
-          sed -i '' "s/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g" Runner.xcodeproj/project.pbxproj
-          
-          # Ajouter la spécification du profil de provisionnement si elle n'existe pas déjà
-          grep -q "PROVISIONING_PROFILE_SPECIFIER" Runner.xcodeproj/project.pbxproj || sed -i '' "/DEVELOPMENT_TEAM/a\\
-          \\\t\\\t\\\tPROVISIONING_PROFILE_SPECIFIER = \"$PROFILE_NAME\";" Runner.xcodeproj/project.pbxproj
-          
-          echo "✅ Fichier project.pbxproj mis à jour avec succès"
 
-      # MODIFICATION: Suppression du flag --no-codesign pour permettre la signature
       - name: Compiler l application iOS pour App Store avec SDK iOS 18
         run: |
           cd project
@@ -395,16 +370,8 @@ jobs:
           CURRENT_SDK=$(xcrun --sdk iphoneos --show-sdk-version)
           echo "Version actuelle du SDK iOS: $CURRENT_SDK"
           
-          # Build Flutter avec signatures (sans le flag --no-codesign)
-          flutter build ios --release
-          
-          # Vérifier si le build a réussi
-          if [ $? -ne 0 ]; then
-            echo "❌ Échec de la compilation Flutter"
-            exit 1
-          fi
-          
-          echo "✅ Compilation Flutter réussie"
+          # S'assurer que nous utilisons Xcode 16 avec iOS 18 SDK
+          flutter build ios --release --no-codesign
 
       - name: Préparer le projet Xcode avec les bons paramètres de signature
         run: |
@@ -574,7 +541,7 @@ jobs:
           issuer-id: ${{ secrets.APPSTORE_API_ISSUER_ID }}
           api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
-          
+      
       # - name: Soumettre IPA à App Store Connect avec fastlane
       #   env:
       #     APPLE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
