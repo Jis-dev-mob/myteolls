@@ -369,8 +369,8 @@ jobs:
             main_target.build_configurations.each do |config|
               if config.name == 'Release'
                 config.build_settings['CODE_SIGN_IDENTITY'] = 'iPhone Distribution'
-                config.build_settings['DEVELOPMENT_TEAM'] = ENV['TEAM_ID']
-                config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = ENV['PROVISIONING_PROFILE_NAME']
+                config.build_settings['DEVELOPMENT_TEAM'] = "${{ secrets.TEAM_ID }}"
+                config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = "${{ secrets.PROVISIONING_PROFILE_NAME }}"
                 config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
                 
                 # Mise à jour pour iOS 18 SDK
