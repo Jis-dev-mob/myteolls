@@ -258,7 +258,7 @@ jobs:
       - name: Installer Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.24.1
+          flutter-version: 3.7.10
           architecture: x64
 
       - name: Installer les dépendances Flutter
@@ -269,7 +269,7 @@ jobs:
       - name: Corriger la version minimale iOS
         run: |
           cd project/ios
-          sed -i '' 's/platform :ios, '9.0'/platform :ios, '12.0'/' Podfile
+          sed -i '' 's/platform :ios, '9.0'/platform :ios, '11.0'/' Podfile
           pod install --repo-update
 
       # Configuration pour s'assurer que toutes les icônes iPad nécessaires sont présentes
