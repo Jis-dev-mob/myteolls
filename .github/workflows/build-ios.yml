@@ -1,4 +1,4 @@
-name: MyTeolls(API stage):iOS IPA Build for App Store and upload
+name: MyTeolls(API stage):iOS IPA Build for App Store and submit
 
 on:
   push:
@@ -269,7 +269,7 @@ jobs:
       - name: Corriger la version minimale iOS
         run: |
           cd project/ios
-          sed -i '' 's/platform :ios, '9.0'/platform :ios, '11.0'/' Podfile
+          sed -i '' 's/platform :ios, '9.0'/platform :ios, '12.0'/' Podfile
           pod install --repo-update
 
       # Configuration pour s'assurer que toutes les icônes iPad nécessaires sont présentes
