@@ -239,21 +239,6 @@ jobs:
 
           # Vérifier si les icônes ont été correctement générées une deuxième fois et contents.json
           ls -la ios/Runner/Assets.xcassets/AppIcon.appiconset/
-
-      - name: Archiver le dossier des icônes
-        run: |
-          cd project
-          # Créer une archive ZIP du dossier des icônes
-          zip -r app_icons.zip ios/Runner/Assets.xcassets/AppIcon.appiconset/
-          echo "Archive créée avec succès"
-          ls -la app_icons.zip
-      
-      - name: Télécharger l archive des icônes
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-icons
-          path: project/app_icons.zip
-          retention-days: 1
           
       - name: Installer Flutter
         uses: subosito/flutter-action@v2
@@ -271,9 +256,6 @@ jobs:
           cd project/ios
           sed -i '' 's/platform :ios, '9.0'/platform :ios, '12.0'/' Podfile
           pod install --repo-update
-
-      # Configuration pour s'assurer que toutes les icônes iPad nécessaires sont présentes
-      # like above
           
       - name: Décrypter le certificat et le profil de provisioning
         run: |
@@ -361,17 +343,6 @@ jobs:
           echo "UUID du profil: $UUID"
           # Renommer le profil avec son UUID pour assurer qu'Xcode le trouve
           cp certificates/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${UUID//\"/}.mobileprovision
-
-      - name: Compiler l application iOS pour App Store avec SDK iOS 18
-        run: |
-          cd project
-          
-          # Vérifier la version du SDK utilisée
-          CURRENT_SDK=$(xcrun --sdk iphoneos --show-sdk-version)
-          echo "Version actuelle du SDK iOS: $CURRENT_SDK"
-          
-          # S'assurer que nous utilisons Xcode 16 avec iOS 18 SDK
-          flutter build ios --release --no-codesign
 
       - name: Préparer le projet Xcode avec les bons paramètres de signature
         run: |
@@ -475,6 +446,17 @@ jobs:
           EOF
           
           cat project/ios/ExportOptions.plist
+          
+      - name: Compiler l application iOS pour App Store avec SDK iOS 18
+        run: |
+          cd project
+          
+          # Vérifier la version du SDK utilisée
+          CURRENT_SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "Version actuelle du SDK iOS: $CURRENT_SDK"
+          
+          # S'assurer que nous utilisons Xcode 16 avec iOS 18 SDK
+          flutter build ios --release --no-codesign
 
       - name: Générer IPA pour App Store avec Xcode 16
         run: |
@@ -504,13 +486,6 @@ jobs:
             -exportOptionsPlist ExportOptions.plist \
             -allowProvisioningUpdates
 
-      # Installer et configurer les clés API App Store Connect
-      - name: Installer Apple API Key
-        run: |
-          mkdir -p ~/.appstoreconnect/private_keys/
-          echo "${{ secrets.APPSTORE_API_PRIVATE_KEY }}" > ~/.appstoreconnect/private_keys/AuthKey.p8
-          chmod 600 ~/.appstoreconnect/private_keys/AuthKey.p8
-          
       - name: Sauvegarder IPA en artifact
         uses: actions/upload-artifact@v4
         with:
@@ -533,6 +508,13 @@ jobs:
             # Exporter le chemin de l'IPA pour l'étape suivante
             echo "IPA_PATH=$IPA_PATH" >> $GITHUB_ENV
           fi
+          
+      # Installer et configurer les clés API App Store Connect
+      - name: Installer Apple API Key
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys/
+          echo "${{ secrets.APPSTORE_API_PRIVATE_KEY }}" > ~/.appstoreconnect/private_keys/AuthKey.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey.p8
 
       - name: Upload app to TestFlight
         uses: apple-actions/upload-testflight-build@v3
