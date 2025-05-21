@@ -1,4 +1,4 @@
-name: MyTeolls(API stage):iOS IPA Build for App Store and submit
+name: Webcrm test env:iOS IPA Build for App Store and upload 1.0.3+10
 
 on:
   push:
@@ -243,142 +243,20 @@ jobs:
       - name: Installer Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.7.10
+          flutter-version: 3.24.1
           architecture: x64
-
-      - name: Mettre à jour le podfile pour une version iOS cohérente
-        run: |
-          cd project/ios
-          cat > Podfile << 'EOF'
-          # Uncomment this line to define a global platform for your project
-          platform :ios, '12.0'
-          # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
-          ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-          project 'Runner', {
-            'Debug' => :debug,
-            'Profile' => :release,
-            'Release' => :release,
-          }
-          def flutter_root
-            generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
-            unless File.exist?(generated_xcode_build_settings_path)
-              raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
-            end
-            File.foreach(generated_xcode_build_settings_path) do |line|
-              matches = line.match(/FLUTTER_ROOT\=(.*)/)
-              return matches[1].strip if matches
-            end
-            raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
-          end
-          require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
-          flutter_ios_podfile_setup
-          target 'Runner' do
-            use_frameworks!
-            use_modular_headers!
-            flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-          end
-          post_install do |installer|
-            installer.pods_project.targets.each do |target|
-              flutter_additional_ios_build_settings(target)
-              # Définir la même version iOS pour toutes les configurations
-              target.build_configurations.each do |config|
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
-              end
-            end
-          end
-          EOF
 
       - name: Installer les dépendances Flutter
         run: |
           cd project
           flutter pub get
 
-      - name: Mettre à jour le fichier Flutter.xcconfig
-        run: |
-          cd project/ios/Flutter
-          
-          # S'assurer que les configurations incluent les xcconfigs de Pod
-          for config_file in Debug.xcconfig Release.xcconfig; do
-            if [ -f "$config_file" ]; then
-              # Vérifier si l'inclusion est déjà présente
-              if ! grep -q "#include \"Pods/Target Support Files" "$config_file"; then
-                echo "// This is a generated file; do not edit or check into version control." > tmpfile
-                echo "#include \"Generated.xcconfig\"" >> tmpfile
-                echo "#include \"Pods/Target Support Files/Pods-Runner/Pods-Runner.${config_file%.*}.xcconfig\"" >> tmpfile
-                cat "$config_file" | grep -v "#include" >> tmpfile
-                mv tmpfile "$config_file"
-                echo "Mis à jour $config_file pour inclure la configuration Pod"
-              else
-                echo "$config_file contient déjà la référence aux configurations Pod"
-              fi
-            fi
-          done
-
-      - name: Mettre à jour les versions cibles iOS dans tous les fichiers de projet
+      - name: Corriger la version minimale iOS
         run: |
           cd project/ios
-          # Installer xcodeproj pour pouvoir mettre à jour les fichiers de projet
-          gem install xcodeproj
-          
-          # Script Ruby pour mettre à jour toutes les configurations pour le même iOS target
-          cat > update_ios_target.rb << 'EOF'
-          require 'xcodeproj'
-          
-          # Ouvrir le projet principal
-          project_path = 'Runner.xcodeproj'
-          project = Xcodeproj::Project.open(project_path)
-          
-          # Mettre à jour toutes les configurations pour le target principal
-          project.targets.each do |target|
-            puts "Mise à jour du target: #{target.name}"
-            target.build_configurations.each do |config|
-              puts "  Configuration: #{config.name}, mise à jour vers iOS 12.0"
-              config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
-              
-              # S'assurer que Base est configuré correctement
-              if config.base_configuration_reference && config.base_configuration_reference.path.include?('Flutter')
-                puts "  Configuration de base trouvée: #{config.base_configuration_reference.path}"
-              end
-            end
-          end
-          
-          # Sauvegarder le projet
-          project.save
-          puts "Projet sauvegardé avec succès"
-          EOF
-          
-          # Exécuter le script Ruby
-          ruby update_ios_target.rb
-          
-          # Installer les pods avec --repo-update pour s'assurer des versions les plus récentes
+          sed -i '' 's/platform :ios, '9.0'/platform :ios, '11.0'/' Podfile
           pod install --repo-update
           
-          if [ -f "Pods/Pods.xcodeproj" ]; then
-            cat > update_pods_target.rb << 'EOF'
-            require 'xcodeproj'
-            
-            # Ouvrir le projet Pods
-            project_path = 'Pods/Pods.xcodeproj'
-            project = Xcodeproj::Project.open(project_path)
-            
-            # Mettre à jour tous les targets dans le projet Pods
-            project.targets.each do |target|
-              puts "Pod target: #{target.name}"
-              target.build_configurations.each do |config|
-                puts "  Configuration: #{config.name}, mise à jour vers iOS 12.0"
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
-              end
-            end
-            
-            # Sauvegarder le projet
-            project.save
-            puts "Projet Pods sauvegardé avec succès"
-            EOF
-            
-            # Exécuter le script Ruby pour les pods
-            ruby update_pods_target.rb
-          fi
-
       - name: Décrypter le certificat et le profil de provisioning
         run: |
           mkdir -p certificates
@@ -466,6 +344,17 @@ jobs:
           # Renommer le profil avec son UUID pour assurer qu'Xcode le trouve
           cp certificates/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${UUID//\"/}.mobileprovision
 
+      - name: Compiler l application iOS pour App Store avec SDK iOS 18
+        run: |
+          cd project
+          
+          # Vérifier la version du SDK utilisée
+          CURRENT_SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "Version actuelle du SDK iOS: $CURRENT_SDK"
+          
+          # S'assurer que nous utilisons Xcode 16 avec iOS 18 SDK
+          flutter build ios --release --no-codesign
+
       - name: Préparer le projet Xcode avec les bons paramètres de signature
         run: |
           cd project/ios
@@ -477,7 +366,7 @@ jobs:
           APP_BUNDLE_ID="${{ secrets.APP_BUNDLE_ID }}"
           
           # Créer un script temporaire pour modifier la configuration de signature
-          cat > update_project_settings.rb << 'EOF'
+          cat > update_project_settings.rb << 'EOL'
           require 'xcodeproj'
           
           # Ouvrir le projet principal
@@ -489,14 +378,14 @@ jobs:
           
           if main_target
             main_target.build_configurations.each do |config|
-              # Définir IPHONEOS_DEPLOYMENT_TARGET pour toutes les configurations
-              config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
-              
               if config.name == 'Release'
                 config.build_settings['CODE_SIGN_IDENTITY'] = 'iPhone Distribution'
                 config.build_settings['DEVELOPMENT_TEAM'] = ENV['TEAM_ID']
                 config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = ENV['PROVISIONING_PROFILE_NAME']
                 config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
+                
+                # Mise à jour pour iOS 18 SDK
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '11.0'
               end
             end
           end
@@ -514,7 +403,12 @@ jobs:
                 config.build_settings['CODE_SIGN_IDENTITY'] = ''
                 
                 # S'assurer que la version iOS minimale est à 12.0
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+                if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+                  current_version = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f
+                  if current_version < 11.0
+                    config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '11.0'
+                  end
+                end
               end
             end
             
@@ -523,10 +417,11 @@ jobs:
           
           # Sauvegarder le projet principal
           project.save
-          EOF
+          EOL
           
           # Exécuter le script Ruby pour modifier les projets
-          TEAM_ID="${{ secrets.TEAM_ID }}" PROVISIONING_PROFILE_NAME="${{ secrets.PROVISIONING_PROFILE_NAME }}" \
+          TEAM_ID="$TEAM_ID" PROVISIONING_PROFILE_NAME="${{ secrets.PROVISIONING_PROFILE_NAME }}" \
+          gem install xcodeproj
           ruby update_project_settings.rb
 
       - name: Créer ExportOptions.plist pour App Store
@@ -562,17 +457,6 @@ jobs:
           EOF
           
           cat project/ios/ExportOptions.plist
-          
-      - name: Compiler l application iOS pour App Store avec SDK iOS 18
-        run: |
-          cd project
-          
-          # Vérifier la version du SDK utilisée
-          CURRENT_SDK=$(xcrun --sdk iphoneos --show-sdk-version)
-          echo "Version actuelle du SDK iOS: $CURRENT_SDK"
-          
-          # S'assurer que nous utilisons Xcode 16 avec iOS 18 SDK
-          flutter build ios --release
 
       - name: Générer IPA pour App Store avec Xcode 16
         run: |
@@ -602,6 +486,13 @@ jobs:
             -exportOptionsPlist ExportOptions.plist \
             -allowProvisioningUpdates
 
+      # Installer et configurer les clés API App Store Connect
+      - name: Installer Apple API Key
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys/
+          echo "${{ secrets.APPSTORE_API_PRIVATE_KEY }}" > ~/.appstoreconnect/private_keys/AuthKey.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey.p8
+          
       - name: Sauvegarder IPA en artifact
         uses: actions/upload-artifact@v4
         with:
@@ -624,13 +515,6 @@ jobs:
             # Exporter le chemin de l'IPA pour l'étape suivante
             echo "IPA_PATH=$IPA_PATH" >> $GITHUB_ENV
           fi
-          
-      # Installer et configurer les clés API App Store Connect
-      - name: Installer Apple API Key
-        run: |
-          mkdir -p ~/.appstoreconnect/private_keys/
-          echo "${{ secrets.APPSTORE_API_PRIVATE_KEY }}" > ~/.appstoreconnect/private_keys/AuthKey.p8
-          chmod 600 ~/.appstoreconnect/private_keys/AuthKey.p8
 
       - name: Upload app to TestFlight
         uses: apple-actions/upload-testflight-build@v3
