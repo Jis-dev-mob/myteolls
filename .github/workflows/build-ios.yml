@@ -456,7 +456,7 @@ jobs:
           echo "Version actuelle du SDK iOS: $CURRENT_SDK"
           
           # S'assurer que nous utilisons Xcode 16 avec iOS 18 SDK
-          flutter build ios --release --no-codesign
+          flutter build ios --release
 
       - name: Générer IPA pour App Store avec Xcode 16
         run: |
