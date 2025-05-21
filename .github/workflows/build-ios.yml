@@ -1,4 +1,4 @@
-name: Webcrm test env:iOS IPA Build for App Store and upload 1.0.3+10
+name: MyTeolls iOS IPA build for App Store and upload
 
 on:
   push:
