@@ -254,7 +254,7 @@ jobs:
       - name: Corriger la version minimale iOS
         run: |
           cd project/ios
-          sed -i '' 's/platform :ios, '9.0'/platform :ios, '12.0'/' Podfile
+          sed -i '' 's/platform :ios, '9.0'/platform :ios, '11.0'/' Podfile
           pod install --repo-update
           
       - name: Décrypter le certificat et le profil de provisioning
