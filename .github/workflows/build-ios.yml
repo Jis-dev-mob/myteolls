@@ -254,7 +254,7 @@ jobs:
       - name: Corriger la version minimale iOS
         run: |
           cd project/ios
-          sed -i '' 's/platform :ios, '9.0'/platform :ios, '11.0'/' Podfile
+          sed -i '' 's/platform :ios, '9.0'/platform :ios, '12.0'/' Podfile
           pod install --repo-update
           
       - name: Décrypter le certificat et le profil de provisioning
@@ -385,7 +385,7 @@ jobs:
                 config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
                 
                 # Mise à jour pour iOS 18 SDK
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '11.0'
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
               end
             end
           end
@@ -405,8 +405,8 @@ jobs:
                 # S'assurer que la version iOS minimale est à 12.0
                 if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
                   current_version = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f
-                  if current_version < 11.0
-                    config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '11.0'
+                  if current_version < 12.0
+                    config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
                   end
                 end
               end
