@@ -1,4 +1,4 @@
-name: MyTeolls iOS IPA build for App Store and upload
+name: MyTeolls(API test) iOS IPA build for App Store and upload
 
 on:
   push:
