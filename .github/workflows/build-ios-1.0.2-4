@@ -1,4 +1,4 @@
-name: TeoDispatch(API test) iOS IPA build for App Store and upload v1.0.0 code 1
+name: MyTeolls(API test) iOS IPA build for App Store and upload v1.4.12 code 3
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
       - name: Cloner le projet depuis SVN
         run: |
           echo "Téléchargement du code depuis SVN..."
-          svn checkout --username "${{ secrets.SVN_USERNAME }}" --password "${{ secrets.SVN_PASSWORD }}" https://svn.jiscomputing.com/teodispatchmobile/ project
+          svn checkout --username "${{ secrets.SVN_USERNAME }}" --password "${{ secrets.SVN_PASSWORD }}" https://svn.jiscomputing.com/mytransporteomobile/ project
 
       - name: Configurer les icônes iPad nécessaires
         run: |
