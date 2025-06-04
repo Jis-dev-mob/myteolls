@@ -1,4 +1,4 @@
-name: MyTeolls(API test) iOS IPA build for App Store and upload v1.0.2 code 4
+name: Teo Dispatch(API test) iOS IPA build for App Store and upload v1.0.0 code 1
 
 on:
   push:
