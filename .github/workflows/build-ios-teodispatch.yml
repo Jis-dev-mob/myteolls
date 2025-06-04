@@ -3,7 +3,7 @@ name: Teo Dispatch(API test) iOS IPA build for App Store and upload v1.0.0 code 
 on:
   push:
     branches:
-      - main
+      - dev
   workflow_dispatch:
 
 jobs: 
