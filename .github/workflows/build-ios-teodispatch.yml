@@ -1,12 +1,12 @@
 name: Teo Dispatch(API test) iOS IPA build for App Store and upload v1.0.0 code 1
-
+ 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
 
-jobs:
+jobs: 
   build:
     runs-on: macos-14
 
